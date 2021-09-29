@@ -19,6 +19,7 @@ from wrappers import \
     Discretization, \
     flat_action_space, \
     SizeReward, \
+    TimeLimit, \
     VectorObservationWrapper, \
     VisualObservationWrapper, \
     Logger
@@ -72,7 +73,7 @@ def build_env(env_config=None, env_factory=None):
     if env_config is None:
         env_config = defaultdict(lambda: defaultdict(dict))
     if env_factory is None:
-        env = gym.make('IGLUSilentBuilder-v0', max_steps=4000)
+        env = gym.make('IGLUSilentBuilder-v0', max_steps=5000)
         if env_config['task_mode'] == 'one_task':
             env.update_taskset(TaskSet(preset=[env_config['task_id']]))
             env.set_task(env_config['task_id'])
@@ -100,6 +101,7 @@ def build_env(env_config=None, env_factory=None):
         env = VectorObservationWrapper(env)
     if env_config.get('size_reward', False):
         env = SizeReward(env)
+    env = TimeLimit(env, limit=env_config['time_limit'])
     return env
 
 def register_models():

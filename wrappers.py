@@ -72,6 +72,25 @@ class ObsWrapper(Wrapper):
         return self.observation(obs, reward, done, info), reward, done, info
 
 
+class TimeLimit(Wrapper):
+    def __init__(self, env, limit):
+        super().__init__(env)
+        self.limit = limit
+        self.step_no = 0
+
+    def reset(self):
+        self.step_no = 0
+        return super().reset()
+
+    def step(self, action):
+        self.step_no += 1
+        obs, reward, done, info = super().step(action)
+        if self.step_no >= self.limit:
+            done = True
+        return obs, reward, done, info
+
+
+
 class SizeReward(Wrapper):
   def __init__(self, env):
     super().__init__(env)

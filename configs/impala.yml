@@ -10,6 +10,7 @@ iglu-baseline:
           action_space: human-level
           visual: true
           size_reward: true
+          time_limit: 500
           # possible values are: 'one_task', 'many_tasks', 'random_tasks'
           task_mode: one_task 
           # if task_mode is one_task -> string with task id
@@ -17,24 +18,34 @@ iglu-baseline:
           # if task_mode is random_tasks -> ignored
           task_id: C32
           # only used if task_mode is random_tasks
+          random_tasks:
+            max_blocks: 20
+            height_levels: 2
+            allow_float: false
+            max_dist: 7
+            num_colors: 6
+            max_cache: 1
         model:
           custom_model: pov_baseline_model
           use_lstm: True
         framework: torch
         vtrace: True
-        rollout_fragment_length: 20
-        train_batch_size: 500
+        vtrace_clip_rho_threshold: 1.0
+        vtrace_clip_pg_rho_threshold: 1.0
+        rollout_fragment_length: 100
+        train_batch_size: 5000
         num_workers: 20
         num_gpus: 1
         broadcast_interval: 1
         max_sample_requests_in_flight_per_worker: 2 
-        num_multi_gpu_tower_stacks: 5
+        num_multi_gpu_tower_stacks: 10
         num_envs_per_worker: 1
-        replay_proportion: 3.0
+        replay_proportion: 1.0
         replay_buffer_num_slots: 100
         learner_queue_timeout: 1000
-        minibatch_buffer_size: 1
-        num_sgd_iter: 1
+        minibatch_buffer_size: 10
+        learner_queue_size: 32
+        num_sgd_iter: 5
         lr_schedule: [
             [0, 0.0005],
             [150000000, 0.000001],
