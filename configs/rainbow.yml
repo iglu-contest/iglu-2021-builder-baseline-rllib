@@ -1,0 +1,64 @@
+iglu-baseline:
+    env: IGLUSilentBuilder-v0
+    run: DQN
+    stop:
+        timesteps_total: 50000000
+    checkpoint_at_end: True
+    checkpoint_freq: 1 # roughly each 50k steps
+    config:
+        env_config:
+          action_space: human-level
+          visual: false
+          size_reward: true
+          # possible values are: 'one_task', 'many_tasks', 'random_tasks'
+          task_mode: one_task 
+          # if task_mode is one_task -> string with task id
+          # if task_mode is many_tasks -> list of task ids
+          # if task_mode is random_tasks -> ignored
+          task_id: C32
+          # only used if task_mode is random_tasks
+          random_tasks:
+            max_blocks: 20
+            height_levels: 2
+            allow_float: false
+            max_dist: 7
+            num_colors: 6
+            max_cache: 1
+        model:
+          custom_model: grid_baseline_model
+        framework: torch
+        double_q: true
+        dueling: true
+        num_atoms: 51
+        v_min: 0
+        v_max: 20
+        noisy: false
+        gamma: 0.99
+        prioritized_replay: true
+        n_step: 10
+        target_network_update_freq: 8000
+        lr: .00005
+        grad_clip: 100.0
+        adam_epsilon: .0001
+        hiddens: [512]
+        learning_starts: 50
+        buffer_size: 500000
+        rollout_fragment_length: 8
+        train_batch_size:  4096
+        exploration_config:
+          initial_epsilon: 1
+          epsilon_timesteps: 5000000
+          final_epsilon: 0.01
+        evaluation_num_workers: 1
+        evaluation_interval: 10
+        evaluation_num_episodes: 1
+        evaluation_config:
+          input: sampler
+          explore: false
+        prioritized_replay_alpha: 0.5
+        final_prioritized_replay_beta: 1.0
+        prioritized_replay_beta_annealing_timesteps: 2000000
+        num_envs_per_worker: 1
+        num_workers: 1
+        num_gpus: 1
+        timesteps_per_iteration: 1000
