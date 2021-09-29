@@ -1,5 +1,3 @@
-"""PyTorch model for DQN"""
-
 from typing import Sequence
 import gym
 import numpy as np
@@ -65,8 +63,6 @@ class PovBaselineModel(TorchModelV2, nn.Module):
 
 
 class GridBaselineModel(TorchModelV2, nn.Module):
-    """Generic fully connected network."""
-
     def __init__(self, obs_space, action_space, num_outputs, model_config,
                  name):
         # flat_obs = {o: obs_space[o] for o in ['agentPos', 'inventory']}
