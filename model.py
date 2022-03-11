@@ -49,6 +49,7 @@ class PovBaselineModel(TorchModelV2, nn.Module):
         )
 
     def forward(self, input_dict, state, seq_lens):
+
         obs = input_dict['obs']
         pov = obs['pov'] / 255. - 0.5
         pov = pov.transpose(2, 3).transpose(1, 2).contiguous()
@@ -91,7 +92,7 @@ class GridBaselineModel(TorchModelV2, nn.Module):
             nn.ReLU()
         )
         self.head = nn.Sequential(
-            nn.Linear(2*hidden_grid + hidden_vec, hidden),
+            nn.Linear(hidden_grid + hidden_vec, hidden),
             nn.ReLU(),
             nn.Linear(hidden, hidden),
             nn.ReLU(),
@@ -99,16 +100,21 @@ class GridBaselineModel(TorchModelV2, nn.Module):
         )
         
     def forward(self, input_dict, state, seq_lens):
+        # print(input_dict.keys())
+        # print(input_dict['obs'].keys())
+        # print({k: v.shape for k, v in input_dict['obs'].items()})
         grid = input_dict['obs']['grid']
-        target_grid = input_dict['obs']['target_grid']
+        # target_grid = input_dict['obs']['target_grid']
         grid = grid.reshape(grid.shape[0], -1)
-        target_grid = target_grid.reshape(target_grid.shape[0], -1)
+        # target_grid = target_grid.reshape(target_grid.shape[0], -1)
         vector_input = torch.cat([input_dict['obs']['agentPos'], input_dict['obs']['inventory']], -1)
 
         grid_embed = self.encode_grid(grid)
-        target_grid_embed = self.encode_grid(target_grid)
+        # target_grid_embed = self.encode_grid(target_grid)
         vec_embed = self.encode_pos_inventory(vector_input)
 
-        head_input = torch.cat([grid_embed, target_grid_embed, vec_embed], -1)
+        head_input = torch.cat([grid_embed, 
+                                # target_grid_embed, 
+                                vec_embed], -1)
 
         return self.head(head_input), state

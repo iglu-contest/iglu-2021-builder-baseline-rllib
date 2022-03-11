@@ -1,0 +1,32 @@
+# Runs on a single g3.16xl node
+# See https://github.com/ray-project/rl-experiments for results
+iglu-gw:
+    env: IGLU_GW-v0
+    run: PPO
+    stop:
+        timesteps_total: 200000000
+    config:
+        # Works for both torch and tf.
+        framework: torch
+        lambda: 0.95
+        kl_coeff: 0.5
+        clip_rewards: True
+        clip_param: 0.2
+        vf_clip_param: 5000.0
+        entropy_coeff: 
+            grid_search:
+                - 0.05
+                - 0.01
+        train_batch_size: 10000
+        rollout_fragment_length: 200
+        sgd_minibatch_size: 500
+        num_sgd_iter: 10
+        num_workers: 20
+        num_envs_per_worker: 64
+        batch_mode: truncate_episodes
+        observation_filter: NoFilter
+        model:
+            custom_model: grid_baseline_model
+            use_lstm: True
+            vf_share_layers: true
+        num_gpus: 1

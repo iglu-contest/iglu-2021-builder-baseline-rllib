@@ -12,7 +12,7 @@ from gym.core import ActionWrapper
 import numpy as np
 from collections import defaultdict
 from typing import Generator
-from minerl_patched.herobraine.hero import spaces
+# from minerl_patched.herobraine.hero import spaces
 
 logger = logging.getLogger(__file__)
 IGLU_ENABLE_LOG = os.environ.get('IGLU_ENABLE_LOG', '')
