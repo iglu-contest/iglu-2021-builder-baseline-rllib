@@ -134,6 +134,8 @@ def build_gw_env(env_config=None, env_factory=None):
     """
     # import iglu
     # from iglu.tasks import TaskSet
+    import sys
+    sys.path.insert(0, './gw/')
     from gridworld.env import GridWorld, create_env
     if env_config is None:
         env_config = defaultdict(lambda: defaultdict(dict))
@@ -168,7 +170,7 @@ def build_gw_env(env_config=None, env_factory=None):
     # if env_config.get('size_reward', False):
     #     env = SizeReward(env)
     # env = TimeLimit(env, limit=env_config['time_limit'])
-    env = create_env(visual=True, discretize=True, size_reward=False, log_actions=False)
+    env = create_env(visual=False, discretize=True, size_reward=True, select_and_place=True, log_actions=False)
     return env
 
 def register_models():
