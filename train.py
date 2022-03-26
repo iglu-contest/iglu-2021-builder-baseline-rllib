@@ -35,18 +35,19 @@ glob_step = 0
 def evaluate_separately(trainer, eval_workers):
     global glob_i, glob_step
     glob_step += 1
-    w = next(iter(eval_workers.remote_workers()))
+    # w = next(iter(eval_workers.remote_workers()))
     # env_ids = ray.get(w.foreach_env.remote(lambda env: list(env.tasks.preset.keys())))[0]
-    env_ids = [0 for _ in range(5)] # eval 5 episodes
-    print(f'env id: {env_ids}')
+    env_ids = [0 for _ in range(1)] # eval 5 episodes
+    # print(f'env id: {env_ids}')
     i = 0
     all_episodes = []
+    total_workers = len(eval_workers.remote_workers())
     while i < len(env_ids):
-        for w in eval_workers.remote_workers():
+        for j, w in enumerate(eval_workers.remote_workers()):
             w.foreach_env.remote(lambda env: (
                 env.turn_on(),
-                env.enable_renderer(), 
-                env.set_idx(glob_i + i, glob_step)
+                env.set_idx(j, total_workers, glob_step),
+                env.set_task(1, full=True) # 1 is a task step number. corresponds to a no. of target
             ))
             i += 1
         glob_i += i
@@ -54,6 +55,11 @@ def evaluate_separately(trainer, eval_workers):
         episodes, _ = collect_episodes(
             remote_workers=eval_workers.remote_workers(), timeout_seconds=99999)
         all_episodes += episodes
+    for w in eval_workers.remote_workers():
+        w.foreach_env.remote(lambda env: (
+            env.set_task(None)
+        ))
+        i += 1
     metrics = summarize_episodes(episodes)
     for eid, ep in zip(env_ids, all_episodes):
         metrics[f'env_{eid}_reward'] = ep.episode_reward
@@ -68,7 +74,7 @@ def evaluate_separately(trainer, eval_workers):
 #             * action_space :: human-level | discrete | continuous
 #             * visual :: (bool) whether to expose only visual observation
 #             * size_reward :: (bool) whether to use reward for increasing size, otherwise default
-#             * task_mode :: possible values are: 'one_task', 'many_tasks', 'random_tasks' 
+#             * task_mode :: possible values are: 'one_task', 'many_tasks', 'random_tasks'
 #                 if task_mode is one_task -> string with task id
 #                 if task_mode is many_tasks -> list of task ids
 #                 if task_mode is random_tasks -> ignored
@@ -76,7 +82,7 @@ def evaluate_separately(trainer, eval_workers):
 #             * random_tasks :: specification for the random tasks generator. for details,
 #                 see the documentation of iglu.tasks.RandomTasks
 #         env_factory (callable, optional): function that returns a env instance
-    
+
 #     """
 #     import iglu
 #     from iglu.tasks import TaskSet
@@ -103,7 +109,7 @@ def evaluate_separately(trainer, eval_workers):
 #     #env = Logger(env)
 #     env = SelectAndPlace(env)
 #     env = Discretization(env, flat_action_space(env_config['action_space']))
-#     # visual - pov + inventory + compass + target grid; 
+#     # visual - pov + inventory + compass + target grid;
 #     # vector: grid + position + inventory + target grid
 #     if env_config['visual']:
 #         env = VisualObservationWrapper(env)
@@ -122,7 +128,7 @@ def build_gw_env(env_config=None, env_factory=None):
             * action_space :: human-level | discrete | continuous
             * visual :: (bool) whether to expose only visual observation
             * size_reward :: (bool) whether to use reward for increasing size, otherwise default
-            * task_mode :: possible values are: 'one_task', 'many_tasks', 'random_tasks' 
+            * task_mode :: possible values are: 'one_task', 'many_tasks', 'random_tasks'
                 if task_mode is one_task -> string with task id
                 if task_mode is many_tasks -> list of task ids
                 if task_mode is random_tasks -> ignored
@@ -130,7 +136,7 @@ def build_gw_env(env_config=None, env_factory=None):
             * random_tasks :: specification for the random tasks generator. for details,
                 see the documentation of iglu.tasks.RandomTasks
         env_factory (callable, optional): function that returns a env instance
-    
+
     """
     # import iglu
     # from iglu.tasks import TaskSet
@@ -139,38 +145,14 @@ def build_gw_env(env_config=None, env_factory=None):
     from gridworld.env import GridWorld, create_env
     if env_config is None:
         env_config = defaultdict(lambda: defaultdict(dict))
-    # if env_factory is None:
-    #     # env = gym.make('IGLUSilentBuilder-v0', max_steps=5000)
-
-    #     if env_config['task_mode'] == 'one_task':
-    #         env.update_taskset(TaskSet(preset=[env_config['task_id']]))
-    #         env.set_task(env_config['task_id'])
-    #     elif env_config['task_mode'] == 'many_tasks':
-    #         env.update_taskset(TaskSet(preset=env_config['task_id']))
-    #     elif env_config['task_mode'] == 'random_tasks':
-    #         env.update_taskset(RandomTasks(
-    #            max_blocks=env_config['random_tasks'].get('max_blocks', 3),
-    #            height_levels=env_config['random_tasks'].get('height_levels', 1),
-    #            allow_float=env_config['random_tasks'].get('allow_float', False),
-    #            max_dist=env_config['random_tasks'].get('max_dist', 2),
-    #            num_colors=env_config['random_tasks'].get('num_colors', 1),
-    #            max_cache=env_config['random_tasks'].get('max_cache', 0),
-    #         ))
-    # else:
-    #     env = env_factory()
-    #env = Logger(env)
-    # env = SelectAndPlace(env)
-    # env = Discretization(env, flat_action_space(env_config['action_space']))
-    # # visual - pov + inventory + compass + target grid; 
-    # # vector: grid + position + inventory + target grid
-    # if env_config['visual']:
-    #     env = VisualObservationWrapper(env)
-    # else:
-    #     env = VectorObservationWrapper(env)
-    # if env_config.get('size_reward', False):
-    #     env = SizeReward(env)
-    # env = TimeLimit(env, limit=env_config['time_limit'])
-    env = create_env(visual=False, discretize=True, size_reward=True, select_and_place=True, log_actions=False)
+    default = {'visual': False, 'discretize': True, 'size_reward': False, 'right_placement_scale': 1.0,
+               'wrong_placement_scale': 0.0, 'log': False}
+    env = create_env(
+        **{k: env_config.get(k, default[k]) for k in default.keys()},
+        select_and_place=True, name=env_config['name']
+    )
+    if env_config.get('logdir', '') != '':
+        env.set_path(env_config['logdir'])
     return env
 
 def register_models():
@@ -204,7 +186,7 @@ if __name__ == '__main__':
         run = config[key]['run']
         print(config)
         del config[key]['env'], config[key]['run']
-        # config[key]['config']['custom_eval_function'] = evaluate_separately
+        config[key]['config']['custom_eval_function'] = evaluate_separately
         if args.local:
             # config[key]['config']['num_workers'] = 1
             config[key]['stop']['timesteps_total'] = 300000
@@ -216,5 +198,5 @@ if __name__ == '__main__':
             loggers = DEFAULT_LOGGERS + (WandbLogger, )
         else:
             loggers = DEFAULT_LOGGERS
-            
+
         tune.run(run, **config[key], loggers=loggers)

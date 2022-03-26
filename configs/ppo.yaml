@@ -5,8 +5,16 @@ iglu-gw:
     run: PPO
     stop:
         timesteps_total: 200000000
+    checkpoint_at_end: True
+    checkpoint_freq: 200 # roughly each 5m steps
     config:
-        # Works for both torch and tf.
+        env_config:
+            visual: false
+            log: false
+            size_reward: false
+            name: train
+            right_placement_scale: 1.0
+            wrong_placement_scale: 0.0
         framework: torch
         lambda: 0.95
         kl_coeff: 0.5
@@ -18,10 +26,25 @@ iglu-gw:
         rollout_fragment_length: 100
         sgd_minibatch_size: 500
         num_sgd_iter: 10
-        num_workers: 20
-        num_envs_per_worker: 64
+        num_workers: 10
+        num_envs_per_worker: 32
         batch_mode: truncate_episodes
         observation_filter: NoFilter
+        evaluation_num_workers: 1
+        # evaluation_num_envs_per_worker: 1
+        evaluation_interval: 1
+        evaluation_num_episodes: 10
+        evaluation_config:
+            input: sampler
+            explore: true
+            env_config:
+                visual: true
+                log: True
+                logdir: "./eval_logs"
+                name: eval
+                size_reward: false
+                right_placement_scale: 100.0
+                wrong_placement_scale: 1.0
         model:
             custom_model: grid_baseline_model
             use_lstm: True

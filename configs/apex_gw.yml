@@ -25,14 +25,8 @@ iglu-gw:
             num_colors: 6
             max_cache: 1
         framework: torch
-        double_q: 
-            grid_search:
-                # - True
-                - false
-        dueling: 
-            grid_seach:
-                # - true
-                - false
+        double_q: false
+        dueling: false
         num_atoms: 1
         noisy: false
         gamma: 0.99
@@ -52,12 +46,12 @@ iglu-gw:
           epsilon_timesteps: 5000000
           final_epsilon: 0.01
         
-        evaluation_num_workers: 1
-        evaluation_interval: 1
-        evaluation_num_episodes: 1
-        evaluation_config:
-          input: sampler
-          explore: false
+        # evaluation_num_workers: 1
+        # evaluation_interval: 1
+        # evaluation_num_episodes: 1
+        # evaluation_config:
+        #   input: sampler
+        #   explore: false
         
         model:
           custom_model: grid_baseline_model

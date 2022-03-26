@@ -4,7 +4,7 @@ iglu-baseline:
     stop:
         timesteps_total: 50000000
     checkpoint_at_end: True
-    checkpoint_freq: 1 # roughly each 50k steps
+    checkpoint_freq: 200 # roughly each 50k steps
     config:
         env_config:
           action_space: human-level

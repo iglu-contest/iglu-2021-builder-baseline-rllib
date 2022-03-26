@@ -77,7 +77,7 @@ class GridBaselineModel(TorchModelV2, nn.Module):
         hidden_vec = 300
         hidden = 300
         self.encode_grid = nn.Sequential(
-            nn.Linear(9*11*11, hidden_grid),
+            nn.Linear(9*11*11*7, hidden_grid),
             nn.ReLU(),
             nn.Linear(hidden_grid, hidden_grid),
             nn.ReLU(),
@@ -92,29 +92,35 @@ class GridBaselineModel(TorchModelV2, nn.Module):
             nn.ReLU()
         )
         self.head = nn.Sequential(
-            nn.Linear(hidden_grid + hidden_vec, hidden),
+            nn.Linear(hidden_grid * 2 + hidden_vec, hidden),
             nn.ReLU(),
             nn.Linear(hidden, hidden),
             nn.ReLU(),
             nn.Linear(hidden, num_outputs)
         )
+        self.register_buffer('eye', torch.eye(7))
         
     def forward(self, input_dict, state, seq_lens):
         # print(input_dict.keys())
         # print(input_dict['obs'].keys())
+        # print(input_dict['obs']['grid'].shape)
         # print({k: v.shape for k, v in input_dict['obs'].items()})
-        grid = input_dict['obs']['grid']
-        # target_grid = input_dict['obs']['target_grid']
+        grid = input_dict['obs']['grid'].long()
+        grid = self.eye[grid]
+        target_grid = input_dict['obs']['target_grid'].long()
+        target_grid = self.eye[target_grid]
         grid = grid.reshape(grid.shape[0], -1)
-        # target_grid = target_grid.reshape(target_grid.shape[0], -1)
+        target_grid = target_grid.reshape(target_grid.shape[0], -1)
+
         vector_input = torch.cat([input_dict['obs']['agentPos'], input_dict['obs']['inventory']], -1)
 
         grid_embed = self.encode_grid(grid)
-        # target_grid_embed = self.encode_grid(target_grid)
+        # print(grid_embed.shape)
+        target_grid_embed = self.encode_grid(target_grid)
         vec_embed = self.encode_pos_inventory(vector_input)
 
         head_input = torch.cat([grid_embed, 
-                                # target_grid_embed, 
+                                target_grid_embed, 
                                 vec_embed], -1)
 
         return self.head(head_input), state
