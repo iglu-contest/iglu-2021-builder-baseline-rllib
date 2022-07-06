@@ -1,3 +1,5 @@
+**This repo contains baselines for the IGLU 2021, please DO NOT use this repo for IGLU 2022! For 2022 baseline, please refer to the [2022 baseline](https://github.com/iglu-contest/IGLU_2022_rl_baseline)**
+
 # NeurIPS 2021 IGLU competition RLlib baselines. 
 
 This repository contains an implementation of several baselines for the Builder task of the IGLU contest.
